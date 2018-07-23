@@ -11,19 +11,43 @@ trait Character {
   def appearsIn: List[Episode.Value]
 }
 
+trait Humanoid extends Character
+
 case class Human(
   id: String,
   name: Option[String],
   friends: List[String],
   appearsIn: List[Episode.Value],
-  homePlanet: Option[String]) extends Character
+  homePlanet: Option[String]) extends Humanoid
 
-case class Droid(
-  id: String,
-  name: Option[String],
-  friends: List[String],
-  appearsIn: List[Episode.Value],
-  primaryFunction: Option[String]) extends Character
+trait Droid extends Character {
+  val primaryFunction: Option[String]
+  val follows: Option[Character]
+}
+
+trait HumanoDroid extends Droid {
+  override val follows: Option[Humanoid]
+}
+
+trait MonoDroid extends Droid {
+  override val follows: Option[Droid]
+}
+
+case class PrimaryDroid
+(id: String,
+ name: Option[String],
+ friends: List[String],
+ appearsIn: List[Episode.Value],
+ override val primaryFunction: Option[String],
+ override val follows: Option[Humanoid]) extends HumanoDroid
+
+case class SecondaryDroid
+(id: String,
+ name: Option[String],
+ friends: List[String],
+ appearsIn: List[Episode.Value],
+ override val primaryFunction: Option[String],
+ override val follows: Option[Droid]) extends MonoDroid
 
 class CharacterRepo {
   import models.CharacterRepo._
@@ -37,13 +61,21 @@ class CharacterRepo {
 }
 
 object CharacterRepo {
+  val luke = Human(
+    id = "1000",
+    name = Some("Luke Skywalker"),
+    friends = List("1002", "1003", "2000", "2001"),
+    appearsIn = List(Episode.NEWHOPE, Episode.EMPIRE, Episode.JEDI),
+    homePlanet = Some("Tatooine"))
+  val leia = Human(
+    id = "1003",
+    name = Some("Leia Organa"),
+    friends = List("1000", "1002", "2000", "2001"),
+    appearsIn = List(Episode.NEWHOPE, Episode.EMPIRE, Episode.JEDI),
+    homePlanet = Some("Alderaan"))
+
   val humans = List(
-    Human(
-      id = "1000",
-      name = Some("Luke Skywalker"),
-      friends = List("1002", "1003", "2000", "2001"),
-      appearsIn = List(Episode.NEWHOPE, Episode.EMPIRE, Episode.JEDI),
-      homePlanet = Some("Tatooine")),
+    luke,
     Human(
       id = "1001",
       name = Some("Darth Vader"),
@@ -56,12 +88,7 @@ object CharacterRepo {
       friends = List("1000", "1003", "2001"),
       appearsIn = List(Episode.NEWHOPE, Episode.EMPIRE, Episode.JEDI),
       homePlanet = None),
-    Human(
-      id = "1003",
-      name = Some("Leia Organa"),
-      friends = List("1000", "1002", "2000", "2001"),
-      appearsIn = List(Episode.NEWHOPE, Episode.EMPIRE, Episode.JEDI),
-      homePlanet = Some("Alderaan")),
+    leia,
     Human(
       id = "1004",
       name = Some("Wilhuff Tarkin"),
@@ -70,18 +97,24 @@ object CharacterRepo {
       homePlanet = None)
   )
 
+  lazy val c3po = SecondaryDroid(
+    id = "2000",
+    name = Some("C-3PO"),
+    friends = List("1000", "1002", "1003", "2001"),
+    appearsIn = List(Episode.NEWHOPE, Episode.EMPIRE, Episode.JEDI),
+    primaryFunction = Some("Protocol"),
+    follows = Some(r2d2))
+
+  lazy val r2d2 = PrimaryDroid(
+    id = "2001",
+    name = Some("R2-D2"),
+    friends = List("1000", "1002", "1003"),
+    appearsIn = List(Episode.NEWHOPE, Episode.EMPIRE, Episode.JEDI),
+    primaryFunction = Some("Astromech"),
+    follows = Some(luke))
+
   val droids = List(
-    Droid(
-      id = "2000",
-      name = Some("C-3PO"),
-      friends = List("1000", "1002", "1003", "2001"),
-      appearsIn = List(Episode.NEWHOPE, Episode.EMPIRE, Episode.JEDI),
-      primaryFunction = Some("Protocol")),
-    Droid(
-      id = "2001",
-      name = Some("R2-D2"),
-      friends = List("1000", "1002", "1003"),
-      appearsIn = List(Episode.NEWHOPE, Episode.EMPIRE, Episode.JEDI),
-      primaryFunction = Some("Astromech"))
+    c3po,
+    r2d2
   )
 }
